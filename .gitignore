@@ -1,0 +1,19 @@
+.env
+build/
+.gradle/
+target/
+*.class
+*.jar
+*.war
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+out/
+.mvn/
+screenshots/
+Image & Video/
+NLDB_Project_Documentation.md
