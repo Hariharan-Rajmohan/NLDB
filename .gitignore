@@ -4,6 +4,8 @@ build/
 target/
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 *.war
 .idea/
 *.iml
