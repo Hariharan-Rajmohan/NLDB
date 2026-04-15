@@ -22,7 +22,7 @@ public class ChatController {
 
     // Block truly dangerous operations
     private static final Pattern DANGEROUS_PATTERN = Pattern.compile(
-            "\\b(DROP\\s+DATABASE|TRUNCATE|GRANT|REVOKE|EXEC|EXECUTE)\\b",
+            "\\b(DROP\\s+DATABASE|TRUNCATE|GRANT|REVOKE|EXEC|EXECUTE|SHUTDOWN|DATABASE|SYSTEM|CALL)\\b",
             Pattern.CASE_INSENSITIVE
     );
 
