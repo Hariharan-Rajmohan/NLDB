@@ -27,10 +27,9 @@ RUN ./gradlew bootJar --no-daemon
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Copy the built jar - using a more specific pattern to ensure we get the boot jar
-COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar
-# OR if it's named 1.0.0.jar
-COPY --from=build /app/build/libs/NLDB-1.0.0.jar app.jar || COPY --from=build /app/build/libs/*.jar app.jar
+# Copy the built jar
+# This pattern ensures we copy the main executable jar regardless of version suffix
+COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
 
