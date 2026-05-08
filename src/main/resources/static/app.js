@@ -179,7 +179,7 @@
         tableBody.innerHTML = data.map((row, idx) =>
             '<tr style="animation: fadeInUp 0.3s ' + (idx * 0.04) + 's both">' +
             columns.map(col =>
-                '<td>' + escapeHtml(row[col]) + '</td>'
+                '<td>' + renderCellData(row[col]) + '</td>'
             ).join('') + '</tr>'
         ).join('');
 
@@ -531,7 +531,7 @@
     // CRUD — Data Management
     // =============================================
 
-    const crudTableTabsContainer = document.getElementById('crud-table-tabs');
+    const crudTableDropdown = document.getElementById('crud-table-dropdown');
     const crudTableHead = document.getElementById('crud-table-head');
     const crudTableBody = document.getElementById('crud-table-body');
     const crudRowCount  = document.getElementById('crud-row-count');
@@ -573,22 +573,21 @@
             if (!response.ok) throw new Error('Failed to load tables');
             const tables = await response.json();
 
-            crudTableTabsContainer.innerHTML = '';
+            crudTableDropdown.innerHTML = '';
             tables.forEach((tableName, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'crud-tab' + (tableName.toLowerCase() === currentTable ? ' active' : '');
-                btn.setAttribute('data-table', tableName.toLowerCase());
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                    '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>' +
-                    '</svg> ' + tableName.charAt(0) + tableName.slice(1).toLowerCase();
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.crud-tab').forEach(t => t.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentTable = tableName.toLowerCase();
-                    crudTableTitle.textContent = tableName.charAt(0) + tableName.slice(1).toLowerCase();
-                    loadCrudData();
-                });
-                crudTableTabsContainer.appendChild(btn);
+                const option = document.createElement('option');
+                option.value = tableName.toLowerCase();
+                option.textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).toLowerCase();
+                if (tableName.toLowerCase() === currentTable) {
+                    option.selected = true;
+                }
+                crudTableDropdown.appendChild(option);
+            });
+
+            crudTableDropdown.addEventListener('change', (e) => {
+                currentTable = e.target.value;
+                crudTableTitle.textContent = e.target.options[e.target.selectedIndex].textContent;
+                loadCrudData();
             });
 
             // If current table exists in list, load its data
@@ -618,6 +617,22 @@
             showCrudStatus('Error loading data: ' + err.message, 'error');
         }
     }
+    // Helper to render media or text
+    function renderCellData(val) {
+        if (val === null || val === undefined) return '';
+        const strVal = String(val);
+        if (strVal.startsWith('/uploads/')) {
+            const ext = strVal.split('.').pop().toLowerCase();
+            if (['mp4', 'webm', 'ogg', 'mov'].includes(ext)) {
+                return '<video src="' + escapeHtml(strVal) + '" width="120" controls style="border-radius: 6px;"></video>';
+            } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+                return '<img src="' + escapeHtml(strVal) + '" width="80" style="border-radius: 6px; object-fit: cover; aspect-ratio: 1;" alt="Media">';
+            } else {
+                return '<a href="' + escapeHtml(strVal) + '" target="_blank" style="color: var(--primary); text-decoration: underline;">View File</a>';
+            }
+        }
+        return escapeHtml(strVal);
+    }
 
     // Render CRUD table with edit/delete buttons
     function renderCrudTable(rows) {
@@ -634,7 +649,7 @@
 
         crudTableBody.innerHTML = rows.map((row, idx) =>
             '<tr style="animation: fadeInUp 0.3s ' + (idx * 0.03) + 's both">' +
-            columns.map(col => '<td>' + escapeHtml(row[col]) + '</td>').join('') +
+            columns.map(col => '<td>' + renderCellData(row[col]) + '</td>').join('') +
             '<td class="actions-cell">' +
                 '<button class="crud-row-btn edit-btn" onclick="window._crudEdit(' + row.ID + ')" title="Edit">' +
                     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -663,10 +678,62 @@
     // Open modal for add
     crudAddBtn.addEventListener('click', () => {
         editingId = null;
-        modalTitle.textContent = 'Add ' + (currentTable === 'students' ? 'Student' : 'Employee');
+        modalTitle.textContent = 'Add Record';
         buildFormFields(null);
         crudModal.classList.remove('hidden');
     });
+
+    // Handle File Upload via Plus/Upload button
+    const crudUploadBtn = document.getElementById('crud-upload-btn');
+    const crudFileInput = document.getElementById('crud-file-input');
+    
+    if (crudUploadBtn && crudFileInput) {
+        crudUploadBtn.addEventListener('click', () => {
+            crudFileInput.click();
+        });
+
+        crudFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showCrudStatus('Uploading file...', 'info');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Upload failed');
+                }
+
+                showCrudStatus('File uploaded successfully!', 'success');
+                
+                // Switch to the 'files' table if it's not the current one, then reload
+                const currentOptions = Array.from(crudTableDropdown.options).map(o => o.value);
+                if (!currentOptions.includes('files')) {
+                    // Refresh table list if files table was just created
+                    await loadCrudTables(); 
+                }
+                
+                // Select 'files' in dropdown
+                crudTableDropdown.value = 'files';
+                currentTable = 'files';
+                crudTableTitle.textContent = 'Files';
+                loadCrudData();
+
+            } catch (err) {
+                showCrudStatus('Upload error: ' + err.message, 'error');
+            } finally {
+                crudFileInput.value = ''; // Reset input
+            }
+        });
+    }
 
     // Refresh button
     crudRefreshBtn.addEventListener('click', loadCrudData);

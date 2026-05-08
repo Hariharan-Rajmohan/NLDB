@@ -53,14 +53,15 @@ public class GeminiService {
             Connection conn = jdbcTemplate.getDataSource().getConnection();
             DatabaseMetaData metaData = conn.getMetaData();
 
-            // Get all tables in the PUBLIC schema
-            ResultSet tables = metaData.getTables(null, "PUBLIC", "%", new String[]{"TABLE"});
+            // Get all tables in the current database
+            String catalog = conn.getCatalog();
+            ResultSet tables = metaData.getTables(catalog, null, "%", new String[]{"TABLE"});
             while (tables.next()) {
                 String tableName = tables.getString("TABLE_NAME");
                 schema.append("Table ").append(tableName.toLowerCase()).append("(");
 
                 // Get columns for each table
-                ResultSet columns = metaData.getColumns(null, "PUBLIC", tableName, "%");
+                ResultSet columns = metaData.getColumns(catalog, null, tableName, "%");
                 List<String> columnNames = new ArrayList<>();
                 while (columns.next()) {
                     columnNames.add(columns.getString("COLUMN_NAME").toLowerCase());

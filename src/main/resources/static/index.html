@@ -280,9 +280,12 @@
 
         <!-- ===== CRUD / Manage Data View ===== -->
         <div id="crud-view" class="hidden">
-            <!-- Table Selector Tabs (dynamically populated) -->
-            <div class="crud-table-tabs" id="crud-table-tabs">
-                <!-- Tabs are populated dynamically by app.js -->
+            <!-- Table Selector Dropdown (dynamically populated) -->
+            <div class="crud-table-selector" style="margin-bottom: 20px;">
+                <label for="crud-table-dropdown" style="font-weight: 500; margin-right: 10px;">Select Table:</label>
+                <select id="crud-table-dropdown" class="form-input" style="width: 250px; display: inline-block;">
+                    <!-- Options are populated dynamically by app.js -->
+                </select>
             </div>
 
             <!-- CRUD Data Panel -->
@@ -301,6 +304,15 @@
                             </svg>
                             Add Record
                         </button>
+                        <button id="crud-upload-btn" class="crud-action-btn add-btn" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload File
+                        </button>
+                        <input type="file" id="crud-file-input" class="hidden" accept="image/*,video/*">
                         <button id="crud-refresh-btn" class="icon-btn" title="Refresh data">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>

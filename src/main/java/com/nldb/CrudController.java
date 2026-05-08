@@ -21,7 +21,7 @@ public class CrudController {
     @GetMapping("/tables")
     public ResponseEntity<List<String>> getTables() {
         List<String> tables = jdbcTemplate.queryForList(
-                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'",
+                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE()",
                 String.class
         );
         return ResponseEntity.ok(tables);
@@ -157,9 +157,9 @@ public class CrudController {
         validateTableName(table);
         List<Map<String, Object>> columns = jdbcTemplate.queryForList(
                 "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT " +
-                "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND TABLE_SCHEMA = 'PUBLIC' " +
+                "FROM INFORMATION_SCHEMA.COLUMNS WHERE LOWER(TABLE_NAME) = LOWER(?) AND TABLE_SCHEMA = DATABASE() " +
                 "ORDER BY ORDINAL_POSITION",
-                sanitize(table).toUpperCase()
+                sanitize(table)
         );
         return ResponseEntity.ok(columns);
     }
@@ -172,10 +172,17 @@ public class CrudController {
      */
     private void validateTableName(String table) {
         List<String> existingTables = jdbcTemplate.queryForList(
-                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'",
+                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE()",
                 String.class
         );
-        if (!existingTables.contains(table.toUpperCase())) {
+        boolean found = false;
+        for (String existingTable : existingTables) {
+            if (existingTable.equalsIgnoreCase(table)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
             throw new IllegalArgumentException("Table not found: " + table);
         }
     }

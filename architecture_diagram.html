@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLDB - System Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050d14;
+            --bg-secondary: #0a1929;
+            --accent-primary: #00c8b4;
+            --accent-secondary: #0ea5e9;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --glass: rgba(10, 25, 41, 0.7);
+            --border: rgba(0, 200, 180, 0.2);
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 1000px;
+            padding: 40px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 200, 180, 0.1);
+            backdrop-filter: blur(20px);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NLDB System Architecture</h1>
+        <div class="mermaid">
+graph TD
+    subgraph ClientLayer ["Client Layer (Frontend)"]
+        UI["User Interface (HTML/CSS/JS)"]
+        Auth["Auth Module (Sign-In/Sessions)"]
+        QueryUI["NL Query View"]
+        CrudUI["Manage Data View"]
+        ChatUI["Dataset Creator Chat"]
+    end
+
+    subgraph BackendLayer ["Backend Layer (Spring Boot)"]
+        QC["QueryController (NL Processor)"]
+        CC["ChatController (Conversational UI)"]
+        CRUD["CrudController (Dynamic Ops)"]
+        GS["GeminiService (Service Layer)"]
+        JDBC["JdbcTemplate (Data Access)"]
+    end
+
+    subgraph DataLayer ["Data & AI Layer"]
+        H2[("H2 Database (MySQL Mode)")]
+        Gemini["Google Gemini AI (LLM / SQL Gen)"]
+        WebSpeech["Web Speech API (STT / TTS)"]
+    end
+
+    UI --> Auth
+    UI --> QueryUI
+    UI --> CrudUI
+    UI --> ChatUI
+    
+    QueryUI --> QC
+    ChatUI --> CC
+    CrudUI --> CRUD
+    
+    UI --- WebSpeech
+    
+    QC --> GS
+    CC --> GS
+    GS --> Gemini
+    Gemini --> GS
+    
+    QC --> JDBC
+    CC --> JDBC
+    CRUD --> JDBC
+    JDBC --> H2
+    H2 --> JDBC
+        </div>
+    </div>
+    <div class="footer">NLDB v1.0.0 Architecture Diagram</div>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter',
+            themeVariables: {
+                primaryColor: '#00c8b4',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#00c8b4',
+                lineColor: '#0ea5e9',
+                secondaryColor: '#0a1929',
+                tertiaryColor: '#050d14'
+            }
+        });
+    </script>
+</body>
+</html>

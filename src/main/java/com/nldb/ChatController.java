@@ -142,7 +142,7 @@ public class ChatController {
     @GetMapping("/tables")
     public ResponseEntity<List<String>> getAllTables() {
         List<String> tables = jdbcTemplate.queryForList(
-                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'",
+                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE()",
                 String.class
         );
         return ResponseEntity.ok(tables);

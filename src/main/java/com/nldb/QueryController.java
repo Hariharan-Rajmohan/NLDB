@@ -16,6 +16,9 @@ public class QueryController {
     @Autowired
     private GeminiService geminiService;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     // Block truly dangerous operations
     private static final Pattern DANGEROUS_PATTERN = Pattern.compile(
             "\\b(DROP\\s+DATABASE|TRUNCATE|GRANT|REVOKE|EXEC|EXECUTE|SHUTDOWN|DATABASE|SYSTEM|CALL)\\b",

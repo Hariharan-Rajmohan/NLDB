@@ -66,11 +66,8 @@ if %WRAPPER_JAR_SIZE% LSS 1 (
         --download
 )
 
-"%JAVA_EXE%" ^
-    %JAVA_OPTS% ^
-    %MAVEN_OPTS% ^
-    -jar %WRAPPER_JAR% ^
-    %*
+echo "%JAVA_EXE%" %JAVA_OPTS% %MAVEN_OPTS% -Dmaven.multiModuleProjectDirectory=%APP_HOME% -classpath %WRAPPER_JAR% org.apache.maven.wrapper.MavenWrapperMain %*
+"%JAVA_EXE%" %JAVA_OPTS% %MAVEN_OPTS% -Dmaven.multiModuleProjectDirectory=%APP_HOME% -classpath %WRAPPER_JAR% org.apache.maven.wrapper.MavenWrapperMain %*
 if ERRORLEVEL 1 goto error
 goto end
 
