@@ -555,12 +555,14 @@
         students: [
             { name: 'name', label: 'Name', type: 'text', required: true },
             { name: 'department', label: 'Department', type: 'text', required: true },
-            { name: 'enrollment_year', label: 'Enrollment Year', type: 'number', required: true }
+            { name: 'enrollment_year', label: 'Enrollment Year', type: 'number', required: true },
+            { name: 'profile', label: 'Profile Picture', type: 'file', required: false }
         ],
         employees: [
             { name: 'name', label: 'Name', type: 'text', required: true },
             { name: 'department', label: 'Department', type: 'text', required: true },
-            { name: 'hire_date', label: 'Hire Date', type: 'date', required: true }
+            { name: 'hire_date', label: 'Hire Date', type: 'date', required: true },
+            { name: 'profile', label: 'Profile Picture', type: 'file', required: false }
         ]
     };
 
@@ -751,17 +753,34 @@
 
     // Build form fields dynamically
     function buildFormFields(existingData) {
+        // Helper to build a single field HTML
+        function buildFieldHtml(name, label, type, required, value) {
+            // Check if this field should be an upload field
+            if (type === 'file' || ['profile', 'image', 'video', 'file', 'photo'].includes(name.toLowerCase())) {
+                return '<div class="form-group">' +
+                    '<label for="field-' + name + '">' + label + '</label>' +
+                    '<div style="display:flex;gap:10px;">' +
+                    '<input type="text" id="field-' + name + '" name="' + name + '" value="' + escapeHtml(value) + '" class="form-input" placeholder="File URL (Auto-filled on upload)" readonly ' + (required ? 'required' : '') + '>' +
+                    '<input type="file" id="file-upload-' + name + '" style="display:none;" accept="image/*,video/*">' +
+                    '<button type="button" class="crud-action-btn add-btn" style="white-space:nowrap; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color);" onclick="document.getElementById(\'file-upload-' + name + '\').click()">Upload File</button>' +
+                    '</div>' +
+                    '</div>';
+            } else {
+                return '<div class="form-group">' +
+                    '<label for="field-' + name + '">' + label + '</label>' +
+                    '<input type="' + type + '" id="field-' + name + '" name="' + name + '" value="' + escapeHtml(value) + '"' +
+                    (required ? ' required' : '') +
+                    ' class="form-input" autocomplete="off">' +
+                    '</div>';
+            }
+        }
+
         // Try known fields first, fall back to dynamic column metadata
         const fields = TABLE_FIELDS[currentTable];
         if (fields) {
             crudFormFields.innerHTML = fields.map(f => {
                 const value = existingData ? (existingData[f.name.toUpperCase()] || existingData[f.name] || '') : '';
-                return '<div class="form-group">' +
-                    '<label for="field-' + f.name + '">' + f.label + '</label>' +
-                    '<input type="' + f.type + '" id="field-' + f.name + '" name="' + f.name + '" value="' + escapeHtml(value) + '"' +
-                    (f.required ? ' required' : '') +
-                    ' class="form-input" autocomplete="off">' +
-                    '</div>';
+                return buildFieldHtml(f.name, f.label, f.type, f.required, value);
             }).join('');
         } else {
             // Dynamic table — fetch column metadata
@@ -769,18 +788,14 @@
                 .then(r => r.json())
                 .then(columns => {
                     crudFormFields.innerHTML = columns
-                        .filter(c => c.COLUMN_NAME !== 'ID')
+                        .filter(c => c.COLUMN_NAME !== 'ID' && c.COLUMN_NAME !== 'id')
                         .map(c => {
                             const name = c.COLUMN_NAME.toLowerCase();
                             const label = name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             const type = c.DATA_TYPE.includes('INT') ? 'number' :
                                          c.DATA_TYPE.includes('DATE') ? 'date' : 'text';
                             const value = existingData ? (existingData[c.COLUMN_NAME] || existingData[name] || '') : '';
-                            return '<div class="form-group">' +
-                                '<label for="field-' + name + '">' + label + '</label>' +
-                                '<input type="' + type + '" id="field-' + name + '" name="' + name + '" value="' + escapeHtml(value) + '"' +
-                                ' required class="form-input" autocomplete="off">' +
-                                '</div>';
+                            return buildFieldHtml(name, label, type, true, value);
                         }).join('');
                 })
                 .catch(() => {
@@ -788,6 +803,33 @@
                 });
         }
     }
+
+    // Handle inline file uploads within the form
+    crudFormFields.addEventListener('change', async (e) => {
+        if (e.target && e.target.type === 'file' && e.target.id.startsWith('file-upload-')) {
+            const fieldName = e.target.id.replace('file-upload-', '');
+            const targetInput = document.getElementById('field-' + fieldName);
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showCrudStatus('Uploading...', 'info');
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Upload failed');
+                
+                targetInput.value = result.fileUrl; // Auto-fill the URL into the readonly input
+                showCrudStatus('File attached successfully!', 'success');
+            } catch (err) {
+                showCrudStatus('Upload error: ' + err.message, 'error');
+            } finally {
+                e.target.value = ''; // Reset input so same file can be selected again if needed
+            }
+        }
+    });
 
     // Form submit handler
     crudForm.addEventListener('submit', async (e) => {
